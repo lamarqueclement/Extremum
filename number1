@@ -1,0 +1,89 @@
+# POTENTIEL EXTREMUM LOCAL D'UNE FONCTION EN UTILISANT LE GRADIENT
+
+import numpy as np
+from sympy import Symbol, Derivative
+import matplotlib.pyplot as plt
+
+def fc1(coord):
+    #return coord[0]**3 + coord[1]**2
+    return (coord[0]-2)**2+(coord[1]+1)**2+2*coord[3]**2
+
+def Df(f,coord):
+    fc_a_deriver = f([symboles[i-1] for i in range(1,len(xP)+1)])
+    echanges = {symboles[i-1]:coord[i-1] for i in range(1,len(xP)+1)} 
+    derivees = [(Derivative(fc_a_deriver, symboles[j-1]).doit().subs(echanges)) for j in range(1,len(xP)+1)]
+    return np.array(derivees)
+
+def afficher_deriv_par(matrice):
+    for i in range(len(matrice)): 
+        print(f"     df({symboles})/d{symboles[i]} = {matrice[i]}" )
+
+def extremum_local(f,xP,approximation,k,tx_apprentissage):
+    # Fonction étudiée et dérivées partielles (env= gradient)
+    print(f'La fonction étudiée est:\n     f({variables[:len(xP)]}) =',f(symboles)) 
+    print('Les dérivées partielles de la fonction étudiée sont:')
+    afficher_deriv_par(Df(f,symboles))
+    
+    # Stockage des valeures prises par xP
+    dico_coords = {"var%d" % (i+1):[] for i in range(len(xP))}
+    
+    # Depart
+    n=0
+    P = [np.array(xP),f(xP)]
+    for i in range(len(xP)):
+        dico_coords["var%d" % (i+1)].append(xP[i])
+    print(f"\nOn commence sur le point P({P[0]}, {P[1]}).")
+
+    # Actions principales
+    n+=1
+    xP=P[0]+k*tx_apprentissage*Df(f,P[0])
+    P = [np.array(xP),f(xP)]
+    for i in range(len(xP)):
+        dico_coords["var%d" % (i+1)].append(xP[i])
+    print("\nEn P, la dérivée vaut",Df(f,P[0]))
+    norme = sum([i**2 for i in Df(f,P[0])])**0.5 # np.linalg.norm(Df(f,P[0]), ord=2) (NON ACCEPTE, norme 1 ok)
+    print(f"En P, la dérivée a pour norme: {norme}")  # RQ: pour un minimum ou maximum, la dérivée est nulle (une norme de 0)
+    print("Les coordonnées du point suivant sont déterminés avec la formule:\n     xP + k*tx_apprentissage*f'(xP)")
+    print(f"Ainsi,\n     P_{n}({P[0]}, {P[1]}).\n")
+
+    n_max=2000
+    while norme>approximation and n<n_max:
+        n+=1
+        xP=P[0]+k*tx_apprentissage*Df(f,P[0])
+        P = [np.array(xP),f(xP)]
+        for i in range(len(xP)):
+            dico_coords["var%d" % (i+1)].append(xP[i])
+        norme = sum([i**2 for i in Df(f,P[0])])**0.5
+        print(f"xP_{n} = {xP} ,norme = {norme}")
+        
+    # Bilan sur la detection d'un extremum local
+    if n == n_max and norme>approximation:
+        print(f"\nAucun extremum n'a été détecté")
+    else: # norme<=approximation:
+        print(f"\nDetection d'un extremum ayant pour coordonnées \n({P[0]}, {P[1]}) \nà {approximation} près.")
+    
+    # Affichage graphique des valeurs prises par les variables
+    colors=['blue','gray','green','yellow','SeaGreen3','goldenrod3','brown4','red','DeepPink2','DarkOrchid1','purple','black']    
+    for i in range(len(xP)):
+        plt.scatter([i for i in range(n+1)], dico_coords["var%d" % (i+1)],  c=colors[i],label=variables[i])        
+    plt.legend()
+    plt.title('Variations sur les valeurs des variables')
+    plt.xlabel('n')
+    plt.ylabel('valeurs des variables')
+    plt.show()
+
+if __name__ == "__main__":
+    xP=[1,2,3,4]
+    variables= list("xyztuvwabcde") # 12 variables max
+    symboles=[Symbol(i) for i in variables[:len(xP)]]
+    approximation=0.001
+    #k=-1 
+    k=int(input("\nDésires tu trouver un minimum ou un maximum? (min: k=-1, max: k=1): ")) 
+    #tx_apprentissage=0.2 
+    tx_apprentissage=float(input("Donner un taux d'apprentissage (0<tx<0.4): "))  
+    extremum_local(fc1,xP,approximation,k,tx_apprentissage)
+    
+# AJOUTER:
+# derivee seconde
+# try except
+# etude de la mise en variable des demandes répétitives
